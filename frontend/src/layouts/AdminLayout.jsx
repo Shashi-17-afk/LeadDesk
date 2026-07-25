@@ -2,6 +2,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Layers, LogOut, ExternalLink, ShieldCheck, UserCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { APP_NAME } from '@/constants';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
 /**
@@ -85,6 +86,9 @@ const AdminLayout = ({ children }) => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Global Footer */}
+      <Footer />
     </div>
   );
 };

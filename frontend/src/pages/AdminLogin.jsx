@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Layers } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { APP_NAME } from '@/constants';
+import Footer from '@/components/Footer';
 
 /**
  * Admin Login Zod Schema
@@ -188,12 +189,14 @@ const AdminLogin = () => {
           </form>
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center mb-8">
           <Link to="/" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
             ← Back to Public Website
           </Link>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };
