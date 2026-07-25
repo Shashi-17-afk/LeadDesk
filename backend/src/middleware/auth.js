@@ -4,15 +4,9 @@ import { env } from '../config/env.js';
 /**
  * Authentication middleware.
  *
- * Reads the JWT from the HttpOnly `token` cookie (not Authorization header).
- * Using HttpOnly cookies prevents JavaScript from accessing the token,
- * which is the primary defense against XSS-based token theft.
- *
- * On success: attaches decoded payload to `req.user` and calls `next()`.
- * On failure: immediately returns 401 — does NOT call `next()`.
- *
- * Usage:
- *   router.get('/protected', requireAuth, controller.handler);
+ * Reads the JWT from the HttpOnly `token` cookie.
+ * On success: attaches decoded payload { id, email, iat, exp } to `req.user` and calls `next()`.
+ * On failure: returns 401 response with structured message.
  */
 export const requireAuth = (req, res, next) => {
   const token = req.cookies?.token;
@@ -21,6 +15,7 @@ export const requireAuth = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Authentication required. Please log in.',
+      code: 'NO_TOKEN',
     });
   }
 
@@ -29,15 +24,18 @@ export const requireAuth = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    // Distinguish expired from invalid for better client-side handling
-    const message =
-      err.name === 'TokenExpiredError'
-        ? 'Session expired. Please log in again.'
-        : 'Invalid session token. Please log in again.';
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired. Please log in again.',
+        code: 'TOKEN_EXPIRED',
+      });
+    }
 
     return res.status(401).json({
       success: false,
-      message,
+      message: 'Invalid session token. Please log in again.',
+      code: 'TOKEN_INVALID',
     });
   }
 };

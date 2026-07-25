@@ -1,55 +1,73 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { api } from '@/services/api';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authApi } from '@/services/auth';
 
 /**
- * AuthContext — manages authentication state for the entire application.
+ * AuthContext — manages global authentication state.
  *
- * Why Context (not Redux/Zustand)?
- * Auth state is app-global but not deeply complex. React Context is the
- * appropriate built-in solution. External state managers would add dependency
- * weight without meaningful benefit at this scale.
- *
- * Why not localStorage for the token?
- * The JWT lives in an HttpOnly cookie set by the server. This component
- * never reads or writes the token directly — the browser handles it
- * transparently on every API request via `credentials: 'include'`.
- *
- * The `user` state here holds the decoded user object returned from the
- * server after successful login or session restoration (/auth/me).
+ * Session restoration flow:
+ * 1. `isLoading` starts as `true`.
+ * 2. `useEffect` triggers `checkAuth()` on initial mount.
+ * 3. Sends `GET /api/v1/auth/me` with `credentials: 'include'`.
+ * 4. If valid cookie: sets `user` state.
+ * 5. If invalid/expired/missing: sets `user` to `null`.
+ * 6. Sets `isLoading` to `false`.
  */
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Starts true to check session before rendering routes
 
   /**
-   * Logs in an admin by sending credentials to the backend.
-   * On success, the server sets an HttpOnly JWT cookie and returns the user object.
-   * Phase 4 also adds session restoration on app mount (GET /auth/me).
+   * Verifies current session via GET /auth/me
    */
-  const login = useCallback(async (credentials) => {
-    setIsLoading(true);
+  const checkAuth = useCallback(async () => {
     try {
-      const { data } = await api.post('/auth/login', credentials);
-      setUser(data.user);
-      return { success: true };
-    } catch (err) {
-      return { success: false, message: err.message };
+      const response = await authApi.me();
+      if (response.success && response.data?.user) {
+        setUser(response.data.user);
+      } else {
+        setUser(null);
+      }
+    } catch {
+      // 401 response means no active/valid session
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   /**
-   * Clears the JWT cookie server-side and resets local user state.
+   * Performs login request and sets state on success.
+   */
+  const login = useCallback(async (credentials) => {
+    try {
+      const response = await authApi.login(credentials);
+      if (response.success && response.data?.user) {
+        setUser(response.data.user);
+        return { success: true, message: response.message };
+      }
+      return { success: false, message: response.message || 'Login failed' };
+    } catch (err) {
+      const errorMessage = err.data?.message || err.message || 'Invalid email or password';
+      return { success: false, message: errorMessage };
+    }
+  }, []);
+
+  /**
+   * Clears session server-side and clears user state locally.
    */
   const logout = useCallback(async () => {
     try {
-      await api.post('/auth/logout');
+      await authApi.logout();
+    } catch {
+      // Ignore errors on logout — local state will be reset regardless
     } finally {
-      // Always clear local state, even if the server request fails
       setUser(null);
     }
   }, []);
@@ -60,20 +78,17 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     logout,
+    checkAuth,
     isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Hook to consume AuthContext.
- * Throws a descriptive error if used outside the provider.
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used inside <AuthProvider>. Check your component tree.');
+    throw new Error('useAuth must be used inside <AuthProvider>');
   }
   return context;
 };

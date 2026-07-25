@@ -1,24 +1,42 @@
-/**
- * Auth Controller — Phase 4
- *
- * Coordinates auth-related HTTP requests.
- * JWT cookie setting/clearing happens here (HTTP concern, not service concern).
- * Service layer handles credential verification and user lookup.
- */
-
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
 import * as authService from '../services/authService.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 
 /**
+ * Standard cookie configuration for JWT.
+ * HttpOnly prevents client JS reading token.
+ * SameSite=Strict prevents CSRF.
+ * Secure=true in production (HTTPS).
+ */
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  path: '/',
+});
+
+/**
  * POST /api/v1/auth/login
  * Validates credentials, issues JWT as HttpOnly cookie.
- * Implemented in Phase 4.
  */
 export const login = async (req, res, next) => {
   try {
-    await authService.authenticateAdmin(req.body.email, req.body.password);
-    // Phase 4: sign JWT, set HttpOnly cookie, return user object
-    return sendSuccess(res, null, 'Login endpoint — implemented in Phase 4');
+    const { email, password } = req.body;
+    const admin = await authService.authenticateAdmin(email, password);
+
+    // Sign JWT token with admin payload (expires in 24h)
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email },
+      env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Set HttpOnly cookie
+    res.cookie('token', token, getCookieOptions());
+
+    return sendSuccess(res, { user: admin }, 'Login successful');
   } catch (err) {
     next(err);
   }
@@ -26,13 +44,15 @@ export const login = async (req, res, next) => {
 
 /**
  * POST /api/v1/auth/logout
- * Clears the JWT cookie.
- * Implemented in Phase 4.
+ * Clears the JWT HttpOnly cookie.
  */
 export const logout = async (_req, res, next) => {
   try {
-    // Phase 4: res.clearCookie('token') + response
-    return sendSuccess(res, null, 'Logout endpoint — implemented in Phase 4');
+    res.clearCookie('token', {
+      ...getCookieOptions(),
+      maxAge: 0, // Expire immediately
+    });
+    return sendSuccess(res, null, 'Logged out successfully');
   } catch (err) {
     next(err);
   }
@@ -40,13 +60,13 @@ export const logout = async (_req, res, next) => {
 
 /**
  * GET /api/v1/auth/me
- * Returns the currently authenticated admin (session restore).
- * Implemented in Phase 4.
+ * Protected endpoint — returns currently authenticated admin user.
+ * Used on frontend page load to restore session.
  */
 export const me = async (req, res, next) => {
   try {
     const admin = await authService.getAdminById(req.user?.id);
-    return sendSuccess(res, admin, 'Session valid');
+    return sendSuccess(res, { user: admin }, 'Session valid');
   } catch (err) {
     next(err);
   }
