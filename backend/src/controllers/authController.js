@@ -6,13 +6,12 @@ import { sendSuccess } from '../utils/apiResponse.js';
 /**
  * Standard cookie configuration for JWT.
  * HttpOnly prevents client JS reading token.
- * SameSite=Strict prevents CSRF.
- * Secure=true in production (HTTPS).
+ * SameSite=None + Secure=true in production enables cross-domain Vercel <-> Render cookies.
  */
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
   path: '/',
 });
