@@ -278,34 +278,6 @@ Updates lead status.
 - **Request Body**: `{ "status": "contacted" }`
 - **Response (`200 OK`)**: Returns updated lead record.
 
----
-
-## 📽️ Video Recording Checklist (Loom)
-
-When recording your presentation video for the Digital Heroes qualification task, cover the following flow:
-
-1. **Introduction** (30s): Briefly introduce yourself and LeadDesk Mini.
-2. **Public Landing Page & Submission** (1 min):
-   - Show the Landing Page UI.
-   - Trigger client-side validation by submitting an invalid form.
-   - Submit a valid lead and show the Sonner success toast notification.
-3. **Admin Authentication** (1 min):
-   - Navigate to `/admin/login`.
-   - Show failed login with wrong credentials.
-   - Log in with valid credentials (`shashishanthan2706@gmail.com` / `ShaDoW17`).
-4. **Admin Dashboard** (1.5 mins):
-   - Highlight the 4 pipeline summary count cards.
-   - Demonstrate real-time debounced search by name or email.
-   - Filter by status tabs (`New`, `Contacted`, `Closed`).
-   - Change a lead status from `New` to `Contacted` using the dropdown and show the toast feedback.
-   - Click "Details" to open the message modal.
-5. **Session Restore & Security** (1 min):
-   - Refresh the page to demonstrate session restoration without login screen flash.
-   - Open DevTools → Application → Cookies to show the `HttpOnly`, `Secure`, `SameSite=None` JWT token.
-   - Log out to show clean session destruction.
-
----
-
 ## 📄 License
 
 Built for the **Digital Heroes Full Stack Development Internship Qualification Task**.
