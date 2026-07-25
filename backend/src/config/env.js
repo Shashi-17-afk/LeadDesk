@@ -31,7 +31,7 @@ const envSchema = z.object({
   FRONTEND_URL: z
     .string()
     .url('FRONTEND_URL must be a valid URL')
-    .default('http://localhost:5173'),
+    .default('https://lead-desk-henna.vercel.app'),
 });
 
 const parsed = envSchema.safeParse(process.env);

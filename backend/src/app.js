@@ -17,13 +17,13 @@ app.use(helmet());
 
 // ─── CORS ──────────────────────────────────────────────────────────────────
 // credentials: true is required for cross-origin cookie support (HttpOnly JWT)
-const cleanFrontendUrl = (env.FRONTEND_URL || 'http://localhost:5173')
+const cleanFrontendUrl = (env.FRONTEND_URL || 'https://lead-desk-henna.vercel.app')
   .replace(/[^a-zA-Z0-9:\/.\-_]/g, '')
   .trim();
 
 app.use(
   cors({
-    origin: cleanFrontendUrl || 'http://localhost:5173',
+    origin: cleanFrontendUrl || 'https://lead-desk-henna.vercel.app',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
