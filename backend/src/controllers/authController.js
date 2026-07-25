@@ -6,15 +6,19 @@ import { sendSuccess } from '../utils/apiResponse.js';
 /**
  * Standard cookie configuration for JWT.
  * HttpOnly prevents client JS reading token.
- * SameSite=None + Secure=true in production enables cross-domain Vercel <-> Render cookies.
+ * SameSite=None + Secure=true in production/HTTPS enables cross-domain Vercel <-> Render cookies.
  */
-const getCookieOptions = () => ({
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  path: '/',
-});
+const getCookieOptions = (req) => {
+  const isSecure = req?.secure || req?.headers?.['x-forwarded-proto'] === 'https' || env.NODE_ENV === 'production';
+
+  return {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/',
+  };
+};
 
 /**
  * POST /api/v1/auth/login
@@ -33,7 +37,7 @@ export const login = async (req, res, next) => {
     );
 
     // Set HttpOnly cookie
-    res.cookie('token', token, getCookieOptions());
+    res.cookie('token', token, getCookieOptions(req));
 
     return sendSuccess(res, { user: admin }, 'Login successful');
   } catch (err) {
@@ -45,10 +49,10 @@ export const login = async (req, res, next) => {
  * POST /api/v1/auth/logout
  * Clears the JWT HttpOnly cookie.
  */
-export const logout = async (_req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
     res.clearCookie('token', {
-      ...getCookieOptions(),
+      ...getCookieOptions(req),
       maxAge: 0, // Expire immediately
     });
     return sendSuccess(res, null, 'Logged out successfully');
