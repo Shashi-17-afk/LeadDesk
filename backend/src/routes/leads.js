@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import * as leadsController from '../controllers/leadsController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -7,11 +8,31 @@ import { createLeadSchema, updateLeadStatusSchema } from '../validators/leadsVal
 const router = Router();
 
 /**
+ * Rate limiter for public lead submission endpoint.
+ * Limits each IP to 5 requests per 15 minutes window to prevent spam/abuse.
+ */
+const createLeadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 submissions per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many lead submissions from this IP. Please try again after 15 minutes.',
+  },
+});
+
+/**
  * POST /api/v1/leads
  * Public — anyone can submit a lead form.
- * validate() runs Zod schema before the controller is called.
+ * Middleware chain: rate limiter -> Zod validator -> controller.
  */
-router.post('/', validate(createLeadSchema), leadsController.createLead);
+router.post(
+  '/',
+  createLeadLimiter,
+  validate(createLeadSchema),
+  leadsController.createLead
+);
 
 /**
  * GET /api/v1/leads

@@ -1,28 +1,46 @@
+import { supabase } from '../config/supabase.js';
+import { createAppError } from '../utils/apiResponse.js';
+
 /**
- * Leads Service — Phase 3 & 5
- *
- * Contains all business logic and database operations for leads.
- * Controllers call these functions and handle the HTTP layer.
- * This service has no knowledge of Express (req, res).
- *
- * Implemented in:
- *   - Phase 3: createLead
- *   - Phase 5: getLeads, updateLeadStatus
+ * Leads Service — Handles lead persistence and querying in Supabase.
  */
 
 /**
- * Creates a new lead in the database.
- * @param {import('../types/index.js').Lead} leadData
+ * Creates a new lead record in Supabase.
+ *
+ * @param {Object} leadData
+ * @param {string} leadData.name
+ * @param {string} leadData.email
+ * @param {string} leadData.budget_range
+ * @param {string} leadData.message
  * @returns {Promise<import('../types/index.js').Lead>}
  */
-export const createLead = async (_leadData) => {
-  throw new Error('createLead not implemented — coming in Phase 3');
+export const createLead = async (leadData) => {
+  const { data, error } = await supabase
+    .from('leads')
+    .insert([
+      {
+        name: leadData.name,
+        email: leadData.email,
+        budget_range: leadData.budget_range,
+        message: leadData.message,
+        status: 'new',
+      },
+    ])
+    .select('id, name, email, budget_range, message, status, created_at, updated_at')
+    .single();
+
+  if (error) {
+    console.error('Supabase Lead Insert Error:', error);
+    throw createAppError('Failed to record your submission. Please try again later.', 500);
+  }
+
+  return data;
 };
 
 /**
  * Retrieves leads with optional search and status filters.
- * @param {{ search?: string, status?: string }} filters
- * @returns {Promise<import('../types/index.js').Lead[]>}
+ * (Implemented in Phase 5)
  */
 export const getLeads = async (_filters) => {
   throw new Error('getLeads not implemented — coming in Phase 5');
@@ -30,9 +48,7 @@ export const getLeads = async (_filters) => {
 
 /**
  * Updates the status of a specific lead.
- * @param {string} id - Lead UUID
- * @param {import('../types/index.js').LeadStatus} status
- * @returns {Promise<import('../types/index.js').Lead>}
+ * (Implemented in Phase 5)
  */
 export const updateLeadStatus = async (_id, _status) => {
   throw new Error('updateLeadStatus not implemented — coming in Phase 5');
