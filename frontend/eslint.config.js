@@ -35,6 +35,7 @@ export default [
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         localStorage: 'readonly', // Available but deliberately not used for auth tokens
+        URLSearchParams: 'readonly',
       },
       parserOptions: {
         ecmaFeatures: { jsx: true },
