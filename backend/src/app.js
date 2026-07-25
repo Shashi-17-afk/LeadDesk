@@ -17,11 +17,13 @@ app.use(helmet());
 
 // ─── CORS ──────────────────────────────────────────────────────────────────
 // credentials: true is required for cross-origin cookie support (HttpOnly JWT)
-const cleanFrontendUrl = env.FRONTEND_URL ? env.FRONTEND_URL.replace(/['"]/g, '').trim() : 'http://localhost:5173';
+const cleanFrontendUrl = (env.FRONTEND_URL || 'http://localhost:5173')
+  .replace(/[^a-zA-Z0-9:\/.\-_]/g, '')
+  .trim();
 
 app.use(
   cors({
-    origin: cleanFrontendUrl,
+    origin: cleanFrontendUrl || 'http://localhost:5173',
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
